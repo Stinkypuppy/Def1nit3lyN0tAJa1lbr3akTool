@@ -1,0 +1,49 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: 'latest' # Specify Xcode version here
+
+    - name: Install Dependencies
+      run: |
+        # Add commands to install any dependencies, e.g., CocoaPods
+        # pod install
+
+    - name: Build IPA
+      run: |
+        xcodebuild -workspace YourWorkspace.xcworkspace \
+                   -scheme YourScheme \
+                   -sdk iphoneos \
+                   -configuration Release \
+                   -archivePath $PWD/build/YourApp.xcarchive \
+                   archive
+
+        xcodebuild -exportArchive \
+                   -archivePath $PWD/build/YourApp.xcarchive \
+                   -exportOptionsPlist ExportOptions.plist \
+                   -exportPath $PWD/build
+
+    - name: Upload IPA to GitHub Releases
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }} # This is the URL for uploading assets to the release
+        asset_path: ./build/YourApp.ipa
+        asset_name: YourApp.ipa
+        asset_content_type: application/octet-stream
